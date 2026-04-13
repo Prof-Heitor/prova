@@ -9,20 +9,19 @@ let testAnswers = [];
 let testScore = 0;
 let numQuestions = 0;
 
-function loadQuestions() {
-  return fetch('questions.json')
-    .then(response => response.json())
-    .then(data => {
-      questionsData = data;
-      numQuestions = questionsData.length;
-      console.log(`Loaded ${numQuestions} questions from questions.json`);
-    })
-    .catch(error => {
-      console.error('Erro ao carregar questions.json:', error);
-      // Fallback para embedded se falhar
-      questionsData = [{"question":"Erro: não foi possível carregar questões","options":["Tente novamente"],"correct":0}];
-      numQuestions = 1;
-    });
+async function loadQuestions() {
+  try {
+    const response = await fetch('questions.json');
+    const data = await response.json();
+    questionsData = data;
+    numQuestions = questionsData.length;
+    console.log(`Loaded ${numQuestions} questions from questions.json`);
+  } catch (error) {
+    console.error('Erro ao carregar questions.json:', error);
+    // Fallback para embedded se falhar
+    questionsData = [{"question":"Erro: não foi possível carregar questões","options":["Tente novamente"],"correct":0}];
+    numQuestions = 1;
+  }
 }
 
 function attachSecurityListeners() {
@@ -74,7 +73,7 @@ function logViolation(action) {
 }
 
 // Login
-document.getElementById('login-form').addEventListener('submit', (e) => {
+document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     studentName = document.getElementById('student-name').value.trim();
     studentClass = document.getElementById('class-select').value;
@@ -89,17 +88,21 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
     
     // Auto fullscreen
     document.getElementById('fullscreen-prompt').style.display = 'block';
-    document.documentElement.requestFullscreen().catch(() => {
+    try {
+        await document.documentElement.requestFullscreen();
+    } catch {
         logViolation('Falha ao entrar em fullscreen (permita no browser)');
-    }).finally(() => {
+    } finally {
         document.getElementById('fullscreen-prompt').style.display = 'none';
         document.getElementById('test-form').style.display = 'block';
-        loadQuestions().then(() => {
-            generateQuestions(questionsData);
-            isExamStarted = true;
-            attachSecurityListeners();
-        });
-    });
+        await loadQuestions();
+        generateQuestions(questionsData);
+        if (questionsData.length === 0) {
+            console.error('Nenhuma questão disponível após carregar questions.json');
+        }
+        isExamStarted = true;
+        attachSecurityListeners();
+    }
 
 });
 
