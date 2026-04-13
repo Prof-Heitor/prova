@@ -32,18 +32,26 @@ function attachSecurityListeners() {
   });
 
   document.addEventListener('keydown', e => {
-      // F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S
-      if (e.key === 'F12' || 
-          (e.ctrlKey && e.shiftKey && e.key === 'I') ||
-          (e.ctrlKey && e.key === 'u') ||
-          (e.ctrlKey && e.key === 's')) {
+      const key = e.key.toLowerCase();
+      const isCtrl = e.ctrlKey || e.metaKey;
+      const isShift = e.shiftKey;
+      const isAlt = e.altKey;
+
+      // Bloquear atalhos de DevTools / inspecionar elemento / ver código-fonte
+      if (
+          e.key === 'F12' ||
+          (isCtrl && isShift && ['i', 'j', 'c'].includes(key)) ||
+          (isCtrl && ['u', 's'].includes(key)) ||
+          (e.metaKey && isAlt && ['i', 'j', 'u'].includes(key))
+      ) {
           e.preventDefault();
-          logViolation(`Tentou abrir DevTools (${e.key})`);
+          logViolation(`Tentou abrir DevTools / inspecionar (${e.key})`);
       }
-      // Prevent copy/paste
-      if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'a')) {
+
+      // Prevent copy/paste/select all
+      if (isCtrl && ['c', 'v', 'a'].includes(key)) {
           e.preventDefault();
-          logViolation('Tentou copiar/colar');
+          logViolation('Tentou copiar/colar/selecionar tudo');
       }
   }, true);
 
