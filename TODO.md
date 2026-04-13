@@ -8,5 +8,6 @@
 - [ ] **Verificar PDF export só inclui violações pós-início**
 - [x] **Completar tarefa**
 
-*Status: Em progresso*
+*Status: PR aberto, novo bug: carregar questions.json*
+
 
