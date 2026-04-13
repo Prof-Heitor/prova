@@ -32,6 +32,10 @@ function attachSecurityListeners() {
   });
 
   document.addEventListener('keydown', e => {
+      // Early prevention: block before exam but log only after
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'c' || e.key.toLowerCase() === 'j'))) {
+        e.preventDefault();
+      }
       const key = e.key.toLowerCase();
       const isCtrl = e.ctrlKey || e.metaKey;
       const isShift = e.shiftKey;
@@ -40,12 +44,20 @@ function attachSecurityListeners() {
       // Bloquear atalhos de DevTools / inspecionar elemento / ver código-fonte
       if (
           e.key === 'F12' ||
-          (isCtrl && isShift && ['i', 'j', 'c'].includes(key)) ||
+(isCtrl && isShift && (key === 'c' || key === 'j' || key === 'i' || key === 'k')) ||  // Explicit Ctrl+Shift+C (inspect), J (console), I/K (devtools)
           (isCtrl && ['u', 's'].includes(key)) ||
           (e.metaKey && isAlt && ['i', 'j', 'u'].includes(key))
       ) {
           e.preventDefault();
-          logViolation(`Tentou abrir DevTools / inspecionar (${e.key})`);
+          showBlockFlash();
+          let detail = `DevTools (${e.key})`;
+          if (isCtrl && isShift) {
+            if (key === 'c') detail = 'Ctrl+Shift+C (inspecionar elemento)';
+            else if (key === 'j') detail = 'Ctrl+Shift+J (console)';
+            else if (key === 'i') detail = 'Ctrl+Shift+I (devtools)';
+            else if (key === 'k') detail = 'Ctrl+Shift+K (console)';
+          }
+          logViolation(`Tentou ${detail}`);
       }
 
       // Prevent copy/paste/select all
@@ -54,6 +66,20 @@ function attachSecurityListeners() {
           logViolation('Tentou copiar/colar/selecionar tudo');
       }
   }, true);
+
+function showBlockFlash() {
+  if (!isExamStarted) return;
+  const flash = document.createElement('div');
+  flash.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(255, 0, 0, 0.3); z-index: 99999; display: flex;
+    align-items: center; justify-content: center; font-size: 48px;
+    color: white; font-weight: bold; pointer-events: none;
+  `;
+  flash.textContent = '🚫 BLOQUEADO - DEVTOOLS';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 800);
+}
 
   // Monitor tab switches and focus
   document.addEventListener('visibilitychange', () => {
@@ -135,8 +161,10 @@ function generateQuestions(data) {
     console.log('Questões geradas:', data.length);
 }
 
-// Removed early generateQuestions as data loads after login
-document.addEventListener('DOMContentLoaded', () => {});
+// Security listeners attached early for DevTools prevention
+document.addEventListener('DOMContentLoaded', () => {
+  attachSecurityListeners();
+});
 
 // Test submit
 document.getElementById('test-form').addEventListener('submit', (e) => {
