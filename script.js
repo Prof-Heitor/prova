@@ -1,3 +1,19 @@
+// script.js
+// Integração com Firebase (Firestore) + Fallback Local
+
+import { 
+    db, 
+    isConfigured, 
+    collection, 
+    doc, 
+    setDoc, 
+    addDoc, 
+    getDocs, 
+    query, 
+    orderBy, 
+    serverTimestamp 
+} from "./firebase-config.js";
+
 // Security violations log
 let violations = [];
 let startTime = null;
@@ -8,17 +24,49 @@ let questionsData = [];
 let testAnswers = [];
 let testScore = 0;
 let numQuestions = 0;
+let submissionId = null;
 
 async function loadQuestions() {
+  // 1. Tentar carregar do Cloud Firestore se estiver configurado
+  if (isConfigured && db) {
+    try {
+      console.log('Tentando carregar questões do Cloud Firestore...');
+      const qRef = collection(db, 'provas', 'simulado_1bim_3tec', 'questoes');
+      const qQuery = query(qRef, orderBy('ordem', 'asc'));
+      const snapshot = await getDocs(qQuery);
+
+      if (!snapshot.empty) {
+        questionsData = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          questionsData.push({
+            id: docSnap.id,
+            question: data.enunciado,
+            options: data.opcoes,
+            // Nota: a resposta correta não é exposta aqui caso venha do Firestore
+            correct: data.correct !== undefined ? data.correct : -1
+          });
+        });
+        numQuestions = questionsData.length;
+        console.log(`✅ Carregadas ${numQuestions} questões diretamente do Cloud Firestore!`);
+        return;
+      } else {
+        console.warn('Coleção de questões vazia no Firestore. Usando questions.json como fallback.');
+      }
+    } catch (err) {
+      console.warn('Falha ao consultar Firestore, usando questions.json local:', err);
+    }
+  }
+
+  // 2. Fallback para o arquivo questions.json local
   try {
     const response = await fetch('questions.json');
     const data = await response.json();
     questionsData = data;
     numQuestions = questionsData.length;
-    console.log(`Loaded ${numQuestions} questions from questions.json`);
+    console.log(`Carregadas ${numQuestions} questões de questions.json (modo local)`);
   } catch (error) {
     console.error('Erro ao carregar questions.json:', error);
-    // Fallback para embedded se falhar
     questionsData = [{"question":"Erro: não foi possível carregar questões","options":["Tente novamente"],"correct":0}];
     numQuestions = 1;
   }
@@ -44,7 +92,7 @@ function attachSecurityListeners() {
       // Bloquear atalhos de DevTools / inspecionar elemento / ver código-fonte
       if (
           e.key === 'F12' ||
-(isCtrl && isShift && (key === 'c' || key === 'j' || key === 'i' || key === 'k')) ||  // Explicit Ctrl+Shift+C (inspect), J (console), I/K (devtools)
+          (isCtrl && isShift && (key === 'c' || key === 'j' || key === 'i' || key === 'k')) ||
           (isCtrl && ['u', 's'].includes(key)) ||
           (e.metaKey && isAlt && ['i', 'j', 'u'].includes(key))
       ) {
@@ -67,19 +115,19 @@ function attachSecurityListeners() {
       }
   }, true);
 
-function showBlockFlash() {
-  if (!isExamStarted) return;
-  const flash = document.createElement('div');
-  flash.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(255, 0, 0, 0.3); z-index: 99999; display: flex;
-    align-items: center; justify-content: center; font-size: 48px;
-    color: white; font-weight: bold; pointer-events: none;
-  `;
-  flash.textContent = '🚫 BLOQUEADO - DEVTOOLS';
-  document.body.appendChild(flash);
-  setTimeout(() => flash.remove(), 800);
-}
+  function showBlockFlash() {
+    if (!isExamStarted) return;
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(255, 0, 0, 0.3); z-index: 99999; display: flex;
+      align-items: center; justify-content: center; font-size: 48px;
+      color: white; font-weight: bold; pointer-events: none;
+    `;
+    flash.textContent = '🚫 BLOQUEADO - DEVTOOLS';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 800);
+  }
 
   // Monitor tab switches and focus
   document.addEventListener('visibilitychange', () => {
@@ -99,11 +147,26 @@ function showBlockFlash() {
   });
 }
 
-// Log function
+// Log function (salva localmente e envia ao Firestore em tempo real)
 function logViolation(action) {
     if (!isExamStarted) return;
     const now = new Date().toLocaleString('pt-BR');
-    violations.push(`${now}: ${action}`);
+    const logEntry = `${now}: ${action}`;
+    violations.push(logEntry);
+
+    // Enviar imediatamente para o Cloud Firestore
+    if (isConfigured && db && submissionId) {
+        addDoc(collection(db, "violacoes"), {
+            submissionId: submissionId,
+            studentName: studentName,
+            studentClass: studentClass,
+            action: action,
+            loggedAt: new Date().toISOString(),
+            createdAt: serverTimestamp()
+        }).catch(err => {
+            console.warn("Não foi possível sincronizar violação na nuvem:", err);
+        });
+    }
 }
 
 // Login
@@ -114,7 +177,10 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     
     if (!studentName || !studentClass) return alert('Preencha todos os campos!');
     
+    // Gera ID único para esta tentativa de prova
+    submissionId = 'sub_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     startTime = new Date();
+    
     document.getElementById('student-info').textContent = `Aluno: ${studentName} | Sala: ${studentClass}`;
     
     document.getElementById('login-section').classList.remove('active');
@@ -132,12 +198,11 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         await loadQuestions();
         generateQuestions(questionsData);
         if (questionsData.length === 0) {
-            console.error('Nenhuma questão disponível após carregar questions.json');
+            console.error('Nenhuma questão disponível');
         }
         isExamStarted = true;
         attachSecurityListeners();
     }
-
 });
 
 function generateQuestions(data) {
@@ -167,36 +232,83 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Test submit
-document.getElementById('test-form').addEventListener('submit', (e) => {
+document.getElementById('test-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     testScore = 0;
     testAnswers = [];
+    const answersMap = {};
     
     for (let i = 0; i < numQuestions; i++) {
         const selected = document.querySelector(`input[name="q${i+1}"]:checked`);
         const suaIndex = selected ? parseInt(selected.value) : -1;
         const suaText = suaIndex >= 0 ? questionsData[i].options[suaIndex] : 'não respondida';
-        const correctIndex = questionsData[i].correct;
-        const correctText = questionsData[i].options[correctIndex];
-        const isWrong = suaIndex !== correctIndex;
+        
+        // Se houver gabarito local disponível (modo legado ou fallback)
+        const correctIndex = questionsData[i].correct !== undefined ? questionsData[i].correct : -1;
+        const correctText = (correctIndex >= 0 && questionsData[i].options[correctIndex]) 
+            ? questionsData[i].options[correctIndex] 
+            : 'Gabarito oficial mantido no servidor';
+        const isWrong = correctIndex >= 0 ? (suaIndex !== correctIndex) : false;
         
         testAnswers.push({
-            qNum: i+1,
-            suaText,
-            correctText,
-            isWrong
+            qNum: i + 1,
+            suaIndex: suaIndex,
+            suaText: suaText,
+            correctText: correctText,
+            isWrong: isWrong
         });
+
+        answersMap[`q${i + 1}`] = suaIndex;
         
-        if (!isWrong) testScore++;
+        if (correctIndex >= 0 && !isWrong) {
+            testScore++;
+        }
     }
     
     const totalTime = new Date() - startTime;
     const percentage = Math.round((testScore / numQuestions) * 100);
+    const timeFormatted = `${Math.floor(totalTime / 60000)}min ${Math.floor((totalTime % 60000) / 1000)}s`;
+    
+    // Gravar a submissão no Cloud Firestore
+    let cloudSaved = false;
+    if (isConfigured && db && submissionId) {
+        try {
+            await setDoc(doc(db, "submissoes", submissionId), {
+                id: submissionId,
+                studentName: studentName,
+                studentClass: studentClass,
+                provaId: "simulado_1bim_3tec",
+                dataInicio: startTime.toISOString(),
+                dataFim: new Date().toISOString(),
+                tempoGastoSeg: Math.round(totalTime / 1000),
+                tempoFormatado: timeFormatted,
+                score: testScore,
+                totalQuestions: numQuestions,
+                percentage: percentage,
+                violationsCount: violations.length,
+                answers: answersMap,
+                detailedAnswers: testAnswers,
+                status: "finalizada",
+                createdAt: serverTimestamp()
+            });
+            cloudSaved = true;
+            console.log("✅ Prova salva com sucesso no Cloud Firestore!");
+        } catch (saveErr) {
+            console.error("Erro ao salvar no Firestore:", saveErr);
+        }
+    }
+
+    const cloudBadge = cloudSaved 
+        ? `<div style="font-size: 0.9rem; color: #2e7d32; margin-top: 0.5rem;">☁️ Respostas salvas e sincronizadas na nuvem com sucesso!</div>`
+        : (isConfigured 
+            ? `<div style="font-size: 0.9rem; color: #d32f2f; margin-top: 0.5rem;">⚠️ Não foi possível sincronizar na nuvem. Baixe o PDF como comprovante.</div>`
+            : `<div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">(Modo local / Demonstração)</div>`);
     
     document.getElementById('score').innerHTML = `
         <strong>${testScore}/${numQuestions} (${percentage}%)</strong><br>
-        Tempo: ${Math.floor(totalTime / 60000)}min ${Math.floor((totalTime % 60000) / 1000)}s
+        Tempo: ${timeFormatted}
+        ${cloudBadge}
     `;
     
     document.getElementById('test-section').classList.remove('active');
@@ -255,7 +367,5 @@ document.getElementById('download-pdf').addEventListener('click', () => {
         doc.setTextColor(0, 0, 0);
     }
     
-    
-    // Password protect (user password 'abacate', owner empty for simplicity)
     doc.save(`prova_${studentName.replace(/[^a-zA-Z0-9]/g, '')}_${new Date().toISOString().slice(0,10)}.pdf`);
 });
