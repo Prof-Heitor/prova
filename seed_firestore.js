@@ -20,32 +20,31 @@ export async function seedQuestionsToFirestore(questionsData) {
     atualizadoEm: new Date()
   });
 
-  // 2. Separar gabarito oficial seguro
   const gabaritoMap = {};
 
-  // 3. Inserir questões públicas (sem a chave 'correct')
+  // 2. Inserir questões no Firestore
   for (let i = 0; i < questionsData.length; i++) {
     const q = questionsData[i];
     const questaoId = `q${i + 1}`;
+    const correctIdx = q.correct !== undefined ? q.correct : (q.correta !== undefined ? q.correta : 0);
     
-    // Armazena no mapa de gabarito
-    gabaritoMap[questaoId] = q.correct;
+    gabaritoMap[questaoId] = correctIdx;
 
-    // Grava a questão pública
     await setDoc(doc(db, "provas", provaId, "questoes", questaoId), {
       ordem: i + 1,
       enunciado: q.question,
-      opcoes: q.options
+      opcoes: q.options,
+      correta: correctIdx
     });
   }
 
-  // 4. Grava o documento de gabarito na coleção protegida
+  // 3. Grava também o mapa de gabarito para referência rápida
   await setDoc(doc(db, "gabaritos", provaId), {
     provaId: provaId,
     respostasCorretas: gabaritoMap,
     atualizadoEm: new Date()
   });
 
-  console.log(`✅ ${questionsData.length} questões e gabarito salvos no Firestore com sucesso!`);
+  console.log(`✅ ${questionsData.length} questões salvas no Firestore com sucesso!`);
   return questionsData.length;
 }

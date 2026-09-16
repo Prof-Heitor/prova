@@ -17,7 +17,6 @@
   <!-- ========================================== -->
   <div id="loginGate" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
     <div class="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 relative overflow-hidden">
-      <!-- Decorativo -->
       <div class="absolute -right-8 -top-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
       <div class="text-center mb-8">
@@ -91,7 +90,7 @@
             <span class="text-xs text-slate-500">3º Ano Técnico • Simulado de Desenvolvimento Web</span>
             <span id="firebaseStatusBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">Verificando Firebase...</span>
           </div>
-          <h1 class="text-2xl font-bold tracking-tight text-slate-900 mt-1">Análise de Resultados e Integridade</h1>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900 mt-1">Gestão da Prova Online</h1>
           <div class="flex items-center gap-2 mt-1">
             <span class="text-xs text-slate-500">Sessão ativa:</span>
             <span id="loggedTeacherEmail" class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">professor@escola.edu.br</span>
@@ -99,14 +98,10 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-          <button id="btnSeed" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl shadow-sm transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-            Sincronizar Questões no Banco
-          </button>
-          <button id="btnExportCSV" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl shadow-sm transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.5L19 7.5V19a2 2 0 01-2 2z"/></svg>
-            Exportar Planilha (CSV)
-          </button>
+          <a href="index.html" target="_blank" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl transition flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            Visualizar Prova do Aluno
+          </a>
           <button id="btnLogout" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-sm font-semibold rounded-xl transition flex items-center gap-1.5">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             Sair
@@ -114,151 +109,213 @@
         </div>
       </div>
 
-      <!-- Metric Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Média Geral da Turma</div>
-          <div id="statAvgScore" class="text-3xl font-bold mt-2 text-indigo-600">-- <span class="text-base text-slate-400 font-normal">/ 10</span></div>
-          <div id="statAvgPercent" class="text-xs text-slate-500 font-medium mt-2">Aguardando submissões...</div>
-        </div>
-
-        <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total de Entregas</div>
-          <div id="statTotalSubmissions" class="text-3xl font-bold mt-2 text-slate-900">0</div>
-          <div class="text-xs text-slate-500 mt-2">Alunos que finalizaram a prova</div>
-        </div>
-
-        <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tempo Médio de Prova</div>
-          <div id="statAvgTime" class="text-3xl font-bold mt-2 text-slate-900">--</div>
-          <div class="text-xs text-slate-500 mt-2">Duração média de realização</div>
-        </div>
-
-        <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alertas de Fraude</div>
-          <div id="statViolationsCount" class="text-3xl font-bold mt-2 text-rose-600">0</div>
-          <div class="text-xs text-rose-500 font-medium mt-2">Alunos com tentativas de atalhos/abas</div>
-        </div>
+      <!-- Navigation Tabs -->
+      <div class="flex border-b border-slate-200 gap-8 text-sm font-bold">
+        <button id="tabBtnResults" class="pb-3 border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Resultados & Integridade
+        </button>
+        <button id="tabBtnQuestions" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.5L19 7.5V19a2 2 0 01-2 2z"/></svg>
+          Banco de Questões no Firebase
+          <span id="tabQuestionsCountBadge" class="ml-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-semibold">10</span>
+        </button>
       </div>
 
-      <!-- Charts & Analytics Section -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- ========================================== -->
+      <!-- ABA 1: RESULTADOS & AUDITORIA              -->
+      <!-- ========================================== -->
+      <div id="viewResults" class="space-y-6">
         
-        <!-- Questions Performance List -->
-        <div class="lg:col-span-2 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-          <div class="flex items-center justify-between mb-4">
+        <!-- Ações do Topo -->
+        <div class="flex justify-end gap-3">
+          <button id="btnExportCSV" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl shadow-sm transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.5L19 7.5V19a2 2 0 01-2 2z"/></svg>
+            Exportar Planilha de Notas (CSV)
+          </button>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Média Geral da Turma</div>
+            <div id="statAvgScore" class="text-3xl font-bold mt-2 text-indigo-600">-- <span class="text-base text-slate-400 font-normal">/ 10</span></div>
+            <div id="statAvgPercent" class="text-xs text-slate-500 font-medium mt-2">Aguardando submissões...</div>
+          </div>
+
+          <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total de Entregas</div>
+            <div id="statTotalSubmissions" class="text-3xl font-bold mt-2 text-slate-900">0</div>
+            <div class="text-xs text-slate-500 mt-2">Alunos que finalizaram a prova</div>
+          </div>
+
+          <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tempo Médio de Prova</div>
+            <div id="statAvgTime" class="text-3xl font-bold mt-2 text-slate-900">--</div>
+            <div class="text-xs text-slate-500 mt-2">Duração média de realização</div>
+          </div>
+
+          <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alertas de Fraude</div>
+            <div id="statViolationsCount" class="text-3xl font-bold mt-2 text-rose-600">0</div>
+            <div class="text-xs text-rose-500 font-medium mt-2">Alunos com tentativas de atalhos/abas</div>
+          </div>
+        </div>
+
+        <!-- Charts & Analytics Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Questions Performance List -->
+          <div class="lg:col-span-2 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-lg font-bold text-slate-900">Taxa de Acerto por Questão</h2>
+                <p class="text-xs text-slate-500">Métricas para identificar temas com alto índice de erro ou ambiguidade</p>
+              </div>
+              <span id="questionsCountBadge" class="text-xs px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-medium">10 Questões</span>
+            </div>
+
+            <div id="questionsPerformanceList" class="space-y-4">
+              <div class="text-center py-8 text-sm text-slate-400">Carregando dados das questões...</div>
+            </div>
+          </div>
+
+          <!-- Score Distribution Card -->
+          <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
             <div>
-              <h2 class="text-lg font-bold text-slate-900">Taxa de Acerto por Questão</h2>
-              <p class="text-xs text-slate-500">Métricas para identificar temas com alto índice de erro ou ambiguidade</p>
-            </div>
-            <span id="questionsCountBadge" class="text-xs px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-medium">10 Questões</span>
-          </div>
+              <h2 class="text-lg font-bold text-slate-900">Distribuição das Notas</h2>
+              <p class="text-xs text-slate-500 mb-6">Faixas de desempenho alcançadas</p>
 
-          <div id="questionsPerformanceList" class="space-y-4">
-            <div class="text-center py-8 text-sm text-slate-400">Carregando dados das questões...</div>
-          </div>
-        </div>
+              <div class="space-y-4">
+                <div>
+                  <div class="flex justify-between text-xs font-medium mb-1">
+                    <span>9.0 a 10.0 (Excelente)</span>
+                    <span id="distExecCount" class="font-bold text-indigo-600">0 alunos (0%)</span>
+                  </div>
+                  <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div id="distExecBar" class="bg-indigo-600 h-2 rounded-full" style="width: 0%"></div>
+                  </div>
+                </div>
 
-        <!-- Score Distribution Card -->
-        <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
-          <div>
-            <h2 class="text-lg font-bold text-slate-900">Distribuição das Notas</h2>
-            <p class="text-xs text-slate-500 mb-6">Faixas de desempenho alcançadas</p>
+                <div>
+                  <div class="flex justify-between text-xs font-medium mb-1">
+                    <span>7.0 a 8.9 (Bom)</span>
+                    <span id="distBomCount" class="font-bold text-emerald-600">0 alunos (0%)</span>
+                  </div>
+                  <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div id="distBomBar" class="bg-emerald-600 h-2 rounded-full" style="width: 0%"></div>
+                  </div>
+                </div>
 
-            <div class="space-y-4">
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span>9.0 a 10.0 (Excelente)</span>
-                  <span id="distExecCount" class="font-bold text-indigo-600">0 alunos (0%)</span>
+                <div>
+                  <div class="flex justify-between text-xs font-medium mb-1">
+                    <span>5.0 a 6.9 (Regular)</span>
+                    <span id="distRegCount" class="font-bold text-amber-600">0 alunos (0%)</span>
+                  </div>
+                  <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div id="distRegBar" class="bg-amber-500 h-2 rounded-full" style="width: 0%"></div>
+                  </div>
                 </div>
-                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div id="distExecBar" class="bg-indigo-600 h-2 rounded-full" style="width: 0%"></div>
-                </div>
-              </div>
 
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span>7.0 a 8.9 (Bom)</span>
-                  <span id="distBomCount" class="font-bold text-emerald-600">0 alunos (0%)</span>
-                </div>
-                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div id="distBomBar" class="bg-emerald-600 h-2 rounded-full" style="width: 0%"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span>5.0 a 6.9 (Regular)</span>
-                  <span id="distRegCount" class="font-bold text-amber-600">0 alunos (0%)</span>
-                </div>
-                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div id="distRegBar" class="bg-amber-500 h-2 rounded-full" style="width: 0%"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span>Abaixo de 5.0 (Crítico)</span>
-                  <span id="distCritCount" class="font-bold text-rose-600">0 alunos (0%)</span>
-                </div>
-                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div id="distCritBar" class="bg-rose-500 h-2 rounded-full" style="width: 0%"></div>
+                <div>
+                  <div class="flex justify-between text-xs font-medium mb-1">
+                    <span>Abaixo de 5.0 (Crítico)</span>
+                    <span id="distCritCount" class="font-bold text-rose-600">0 alunos (0%)</span>
+                  </div>
+                  <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div id="distCritBar" class="bg-rose-500 h-2 rounded-full" style="width: 0%"></div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="mt-6 p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-xs text-indigo-800">
-            💡 <strong>Dica Pedagógica:</strong> Questões com taxa de acerto inferior a 50% indicam que o conceito deve ser reforçado em sala ou revisado em aula de recuperação.
+            <div class="mt-6 p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-xs text-indigo-800">
+              💡 <strong>Dica Pedagógica:</strong> Questões com taxa de acerto inferior a 50% indicam que o conceito deve ser reforçado em sala.
+            </div>
           </div>
         </div>
+
+        <!-- Student Table & Audit Section -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Relatório Individual de Alunos</h2>
+              <p class="text-xs text-slate-500">Acompanhamento detalhado em tempo real de notas, duração e violações</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <input id="searchInput" type="text" placeholder="Buscar por aluno..." class="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl text-sm w-64 focus:outline-none focus:border-indigo-500 transition">
+              <select id="statusFilter" class="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition">
+                <option value="all">Todos os Alunos</option>
+                <option value="alert">Com Violações</option>
+                <option value="clean">Sem Violações</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 text-slate-500 border-b border-slate-200 text-xs uppercase tracking-wider">
+                <tr>
+                  <th class="px-6 py-3">Aluno</th>
+                  <th class="px-6 py-3">Turma</th>
+                  <th class="px-6 py-3">Nota</th>
+                  <th class="px-6 py-3">Tempo Gasto</th>
+                  <th class="px-6 py-3">Integridade / Alertas</th>
+                  <th class="px-6 py-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="studentsTableBody" class="divide-y divide-slate-100">
+                <tr>
+                  <td colspan="6" class="px-6 py-8 text-center text-slate-400 text-sm">
+                    Nenhuma submissão registrada no momento.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
 
-      <!-- Student Table & Audit Section -->
-      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+      <!-- ========================================== -->
+      <!-- ABA 2: BANCO DE QUESTÕES NO FIREBASE       -->
+      <!-- ========================================== -->
+      <div id="viewQuestions" class="hidden space-y-6">
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
           <div>
-            <h2 class="text-lg font-bold text-slate-900">Relatório Individual de Alunos</h2>
-            <p class="text-xs text-slate-500">Acompanhamento detalhado em tempo real de notas, duração e violações</p>
+            <h2 class="text-lg font-bold text-slate-900">Banco de Questões no Cloud Firestore</h2>
+            <p class="text-xs text-slate-500">As questões criadas ou editadas aqui são sincronizadas instantaneamente com a tela da prova dos alunos.</p>
           </div>
-          
-          <div class="flex items-center gap-3">
-            <input id="searchInput" type="text" placeholder="Buscar por aluno..." class="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl text-sm w-64 focus:outline-none focus:border-indigo-500 transition">
-            <select id="statusFilter" class="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition">
-              <option value="all">Todos os Alunos</option>
-              <option value="alert">Com Violações</option>
-              <option value="clean">Sem Violações</option>
-            </select>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button id="btnSeedQuestions" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Restaurar 10 Questões Padrão
+            </button>
+            <button id="btnOpenNewQuestionModal" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              + Nova Questão
+            </button>
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-50 text-slate-500 border-b border-slate-200 text-xs uppercase tracking-wider">
-              <tr>
-                <th class="px-6 py-3">Aluno</th>
-                <th class="px-6 py-3">Turma</th>
-                <th class="px-6 py-3">Nota</th>
-                <th class="px-6 py-3">Tempo Gasto</th>
-                <th class="px-6 py-3">Integridade / Alertas</th>
-                <th class="px-6 py-3 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="studentsTableBody" class="divide-y divide-slate-100">
-              <tr>
-                <td colspan="6" class="px-6 py-8 text-center text-slate-400 text-sm">
-                  Nenhuma submissão registrada no momento.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Lista de Cards de Questões -->
+        <div id="questionsCardList" class="space-y-4">
+          <div class="text-center py-12 text-slate-400 text-sm">Carregando questões do Firestore...</div>
         </div>
+
       </div>
 
     </div>
   </div>
 
-  <!-- Modal Raio-X do Aluno -->
+
+  <!-- ========================================== -->
+  <!-- MODAL: RAIO-X DO ALUNO                     -->
+  <!-- ========================================== -->
   <div id="studentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white border border-slate-200 max-w-2xl w-full rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-start border-b border-slate-100 pb-4">
@@ -269,14 +326,12 @@
         <button id="modalCloseBtn" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none">&times;</button>
       </div>
 
-      <!-- Violações Timeline -->
       <div>
         <h4 class="text-sm font-bold text-slate-800 mb-2">Relatório de Integridade e Ocorrências</h4>
         <div id="modalViolationsList" class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs font-mono">
         </div>
       </div>
 
-      <!-- Respostas do Aluno -->
       <div>
         <h4 class="text-sm font-bold text-slate-800 mb-2">Respostas do Aluno</h4>
         <div id="modalAnswersList" class="space-y-2 max-h-60 overflow-y-auto p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs">
@@ -288,6 +343,80 @@
           Fechar
         </button>
       </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADICIONAR / EDITAR QUESTÃO          -->
+  <!-- ========================================== -->
+  <div id="questionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white border border-slate-200 max-w-2xl w-full rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+        <div>
+          <h3 id="questionModalTitle" class="text-xl font-bold text-slate-900">Nova Questão</h3>
+          <p class="text-xs text-slate-500">Cadastre a pergunta, alternativas e defina a resposta correta</p>
+        </div>
+        <button id="questionModalCloseBtn" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none">&times;</button>
+      </div>
+
+      <form id="questionForm" class="space-y-4">
+        <input type="hidden" id="editQuestionId">
+        
+        <div>
+          <label for="qOrdem" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Ordem / Número da Questão</label>
+          <input type="number" id="qOrdem" required min="1" class="w-28 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:border-indigo-600">
+        </div>
+
+        <div>
+          <label for="qEnunciado" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Enunciado da Questão</label>
+          <textarea id="qEnunciado" rows="4" required placeholder="Digite a pergunta da prova..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Alternativas (Marque a correta no rádio):</label>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-2">
+              <input type="radio" name="optCorreta" value="0" required class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-bold text-slate-500 w-5">A)</span>
+              <input type="text" id="opt0" required placeholder="Texto da alternativa A" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600">
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input type="radio" name="optCorreta" value="1" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-bold text-slate-500 w-5">B)</span>
+              <input type="text" id="opt1" required placeholder="Texto da alternativa B" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600">
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input type="radio" name="optCorreta" value="2" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-bold text-slate-500 w-5">C)</span>
+              <input type="text" id="opt2" required placeholder="Texto da alternativa C" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600">
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input type="radio" name="optCorreta" value="3" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-bold text-slate-500 w-5">D)</span>
+              <input type="text" id="opt3" required placeholder="Texto da alternativa D" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600">
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input type="radio" name="optCorreta" value="4" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-bold text-slate-500 w-5">E)</span>
+              <input type="text" id="opt4" placeholder="Texto da alternativa E (opcional)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" id="questionModalCancelBtn" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition">
+            Cancelar
+          </button>
+          <button type="submit" id="btnSaveQuestion" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-sm transition">
+            Salvar no Firebase
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

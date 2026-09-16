@@ -1,5 +1,5 @@
 // admin.js
-// Lógica do Painel de Análise de Resultados com Camada de Segurança e Autenticação
+// Lógica do Painel de Análise de Resultados e Gestão de Questões no Firebase
 
 import { 
     db, 
@@ -7,8 +7,10 @@ import {
     isConfigured, 
     collection, 
     doc, 
+    setDoc,
     getDocs, 
     getDoc, 
+    deleteDoc,
     onSnapshot, 
     query, 
     orderBy,
@@ -21,12 +23,13 @@ import { seedQuestionsToFirestore } from "./seed_firestore.js";
 
 // Estado global do painel
 let submissions = [];
-let questionsList = [];
+let questionsList = []; // Array de { id, ordem, question/enunciado, options/opcoes, correct/correta }
 let currentFilteredList = [];
 let unsubscribeSubmissions = null;
+let currentTab = "results";
 
 // Senha mestra de demonstração/offline caso o Firebase Auth ainda não esteja configurado
-const DEMO_MASTER_PASS = "abacate"; // Mesma chave usada no PDF da prova
+const DEMO_MASTER_PASS = "abacate";
 
 // Dados simulados para modo demonstração
 const demoSubmissions = [
@@ -130,6 +133,8 @@ const demoSubmissions = [
 document.addEventListener('DOMContentLoaded', () => {
     setupAuthListeners();
     setupDashboardEventListeners();
+    setupTabNavigation();
+    setupQuestionCrudEvents();
 });
 
 // ============================================================
@@ -143,7 +148,6 @@ function setupAuthListeners() {
     if (isConfigured && auth) {
         hintElem.textContent = "🔒 Protegido via Firebase Authentication. Digite seu e-mail e senha cadastrados no console.";
         
-        // Escuta o estado da sessão no Firebase
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 console.log("Professor autenticado no Firebase:", user.email);
@@ -155,7 +159,6 @@ function setupAuthListeners() {
     } else {
         hintElem.innerHTML = `⚠️ Modo Demonstração / Offline: Use a senha <code class="px-1.5 py-0.5 bg-slate-100 font-bold text-indigo-700 rounded">${DEMO_MASTER_PASS}</code>`;
         
-        // Verifica se há sessão local salva
         const isLocalAuth = sessionStorage.getItem('admin_session_auth');
         const localEmail = sessionStorage.getItem('admin_session_email') || 'professor@escola.local';
         
@@ -166,7 +169,6 @@ function setupAuthListeners() {
         }
     }
 
-    // Formulário de Login
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('adminEmail').value.trim();
@@ -181,11 +183,8 @@ function setupAuthListeners() {
 
         try {
             if (isConfigured && auth) {
-                // Autenticação Real no Firebase Authentication
                 await signInWithEmailAndPassword(auth, email, password);
-                // onAuthStateChanged cuidará de abrir o dashboard
             } else {
-                // Autenticação Local / Demonstração
                 if (password === DEMO_MASTER_PASS || password === "admin123") {
                     sessionStorage.setItem('admin_session_auth', 'true');
                     sessionStorage.setItem('admin_session_email', email);
@@ -204,7 +203,6 @@ function setupAuthListeners() {
         }
     });
 
-    // Logout
     logoutBtn.addEventListener('click', async () => {
         if (isConfigured && auth) {
             await signOut(auth);
@@ -232,7 +230,7 @@ async function showDashboard(teacherEmail) {
     document.getElementById('loggedTeacherEmail').textContent = teacherEmail;
 
     initFirebaseStatus();
-    await loadQuestionsMeta();
+    await loadQuestionsFromFirestoreOrFallback();
 
     if (isConfigured && db) {
         listenToSubmissionsRealtime();
@@ -257,7 +255,374 @@ function getFriendlyErrorMessage(err) {
 }
 
 // ============================================================
-// 2. PAINEL DE CONTROLE E MÉTRICAS
+// 2. NAVEGAÇÃO POR ABAS (RESULTADOS VS BANCO DE QUESTÕES)
+// ============================================================
+function setupTabNavigation() {
+    const tabResults = document.getElementById('tabBtnResults');
+    const tabQuestions = document.getElementById('tabBtnQuestions');
+    const viewResults = document.getElementById('viewResults');
+    const viewQuestions = document.getElementById('viewQuestions');
+
+    tabResults.addEventListener('click', () => {
+        currentTab = "results";
+        tabResults.className = "pb-3 border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2 transition";
+        tabQuestions.className = "pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition";
+        viewResults.classList.remove('hidden');
+        viewQuestions.classList.add('hidden');
+    });
+
+    tabQuestions.addEventListener('click', () => {
+        currentTab = "questions";
+        tabQuestions.className = "pb-3 border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2 transition";
+        tabResults.className = "pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition";
+        viewQuestions.classList.remove('hidden');
+        viewResults.classList.add('hidden');
+        renderQuestionsManager();
+    });
+}
+
+// ============================================================
+// 3. GESTÃO DE QUESTÕES NO FIREBASE (CRUD)
+// ============================================================
+async function loadQuestionsFromFirestoreOrFallback() {
+    if (isConfigured && db) {
+        try {
+            console.log("Carregando questões do Firestore...");
+            const qRef = collection(db, "provas", "simulado_1bim_3tec", "questoes");
+            const qQuery = query(qRef, orderBy("ordem", "asc"));
+            const snapshot = await getDocs(qQuery);
+
+            if (!snapshot.empty) {
+                questionsList = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    questionsList.push({
+                        id: docSnap.id,
+                        ordem: data.ordem || 1,
+                        question: data.enunciado || data.question,
+                        enunciado: data.enunciado || data.question,
+                        options: data.opcoes || data.options || [],
+                        opcoes: data.opcoes || data.options || [],
+                        correct: data.correta !== undefined ? data.correta : (data.correct !== undefined ? data.correct : 0),
+                        correta: data.correta !== undefined ? data.correta : (data.correct !== undefined ? data.correct : 0)
+                    });
+                });
+                console.log(`✅ ${questionsList.length} questões carregadas do Firestore!`);
+                updateQuestionsBadges();
+                renderQuestionsPerformance();
+                renderQuestionsManager();
+                return;
+            }
+        } catch (err) {
+            console.warn("Erro ao buscar questões do Firestore, recorrendo a questions.json:", err);
+        }
+    }
+
+    // Fallback: carregar de questions.json
+    try {
+        const response = await fetch('questions.json');
+        const data = await response.json();
+        questionsList = data.map((q, idx) => ({
+            id: `q${idx + 1}`,
+            ordem: idx + 1,
+            question: q.question,
+            enunciado: q.question,
+            options: q.options,
+            opcoes: q.options,
+            correct: q.correct,
+            correta: q.correct
+        }));
+        updateQuestionsBadges();
+        renderQuestionsPerformance();
+        renderQuestionsManager();
+    } catch (e) {
+        console.error("Erro ao carregar questions.json:", e);
+    }
+}
+
+function updateQuestionsBadges() {
+    const count = questionsList.length;
+    document.getElementById('questionsCountBadge').textContent = `${count} Questões`;
+    document.getElementById('tabQuestionsCountBadge').textContent = `${count}`;
+}
+
+function renderQuestionsManager() {
+    const container = document.getElementById('questionsCardList');
+    container.innerHTML = '';
+
+    if (!questionsList || questionsList.length === 0) {
+        container.innerHTML = `
+            <div class="bg-white border border-slate-200 p-8 rounded-2xl text-center space-y-3">
+                <p class="text-slate-500 text-sm">Nenhuma questão cadastrada no banco de dados.</p>
+                <button id="btnSeedEmpty" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow">
+                    Importar 10 Questões Iniciais
+                </button>
+            </div>
+        `;
+        const btnEmpty = document.getElementById('btnSeedEmpty');
+        if (btnEmpty) btnEmpty.addEventListener('click', seedDefaultQuestions);
+        return;
+    }
+
+    questionsList.forEach((q, idx) => {
+        const card = document.createElement('div');
+        card.className = "bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-4 hover:border-slate-300 transition";
+        
+        let optionsHtml = '';
+        const letras = ['A', 'B', 'C', 'D', 'E'];
+        const options = q.opcoes || q.options || [];
+        const correctIdx = q.correta !== undefined ? q.correta : q.correct;
+
+        options.forEach((opt, optIdx) => {
+            const isCorrect = (optIdx === correctIdx);
+            optionsHtml += `
+                <div class="flex items-start gap-3 p-2.5 rounded-xl text-xs ${isCorrect ? 'bg-emerald-50 border border-emerald-200 font-semibold text-emerald-800' : 'bg-slate-50 border border-slate-100 text-slate-700'}">
+                    <span class="px-2 py-0.5 rounded-md font-bold ${isCorrect ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'}">
+                        ${letras[optIdx] || optIdx + 1}
+                    </span>
+                    <span class="flex-1 mt-0.5">${opt}</span>
+                    ${isCorrect ? `<span class="text-emerald-600 font-bold ml-2">✓ Resposta Correta</span>` : ''}
+                </div>
+            `;
+        });
+
+        card.innerHTML = `
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div class="space-y-1 flex-1">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold">Questão ${q.ordem || idx + 1}</span>
+                        <span class="text-[11px] text-slate-400 font-mono">ID: ${q.id}</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900 leading-relaxed pt-1">${q.enunciado || q.question}</h3>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button data-id="${q.id}" class="btn-edit-q px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        Editar
+                    </button>
+                    <button data-id="${q.id}" class="btn-del-q px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-lg transition flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Excluir
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-1.5 pt-2">
+                ${optionsHtml}
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    // Eventos dos botões Editar e Excluir
+    document.querySelectorAll('.btn-edit-q').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const qId = btn.getAttribute('data-id');
+            openEditQuestionModal(qId);
+        });
+    });
+
+    document.querySelectorAll('.btn-del-q').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const qId = btn.getAttribute('data-id');
+            await deleteQuestion(qId);
+        });
+    });
+}
+
+function setupQuestionCrudEvents() {
+    const btnNew = document.getElementById('btnOpenNewQuestionModal');
+    const btnSeed = document.getElementById('btnSeedQuestions');
+    const modal = document.getElementById('questionModal');
+    const modalClose = document.getElementById('questionModalCloseBtn');
+    const modalCancel = document.getElementById('questionModalCancelBtn');
+    const qForm = document.getElementById('questionForm');
+
+    btnNew.addEventListener('click', () => {
+        openNewQuestionModal();
+    });
+
+    btnSeed.addEventListener('click', seedDefaultQuestions);
+
+    modalClose.addEventListener('click', () => modal.classList.add('hidden'));
+    modalCancel.addEventListener('click', () => modal.classList.add('hidden'));
+
+    qForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await saveQuestionFromModal();
+    });
+}
+
+function openNewQuestionModal() {
+    document.getElementById('questionModalTitle').textContent = "Nova Questão no Firebase";
+    document.getElementById('editQuestionId').value = "";
+    document.getElementById('qOrdem').value = questionsList.length + 1;
+    document.getElementById('qEnunciado').value = "";
+    document.getElementById('opt0').value = "";
+    document.getElementById('opt1').value = "";
+    document.getElementById('opt2').value = "";
+    document.getElementById('opt3').value = "";
+    document.getElementById('opt4').value = "";
+
+    const radios = document.getElementsByName('optCorreta');
+    radios.forEach((r, idx) => r.checked = (idx === 0));
+
+    document.getElementById('questionModal').classList.remove('hidden');
+}
+
+function openEditQuestionModal(qId) {
+    const q = questionsList.find(item => item.id === qId);
+    if (!q) return;
+
+    document.getElementById('questionModalTitle').textContent = `Editar Questão ${q.ordem || ''}`;
+    document.getElementById('editQuestionId').value = q.id;
+    document.getElementById('qOrdem').value = q.ordem || 1;
+    document.getElementById('qEnunciado').value = q.enunciado || q.question || "";
+
+    const options = q.opcoes || q.options || [];
+    document.getElementById('opt0').value = options[0] || "";
+    document.getElementById('opt1').value = options[1] || "";
+    document.getElementById('opt2').value = options[2] || "";
+    document.getElementById('opt3').value = options[3] || "";
+    document.getElementById('opt4').value = options[4] || "";
+
+    const correctIdx = q.correta !== undefined ? q.correta : q.correct;
+    const radios = document.getElementsByName('optCorreta');
+    radios.forEach((r, idx) => {
+        r.checked = (idx === Number(correctIdx));
+    });
+
+    document.getElementById('questionModal').classList.remove('hidden');
+}
+
+async function saveQuestionFromModal() {
+    const editId = document.getElementById('editQuestionId').value;
+    const ordem = parseInt(document.getElementById('qOrdem').value) || (questionsList.length + 1);
+    const enunciado = document.getElementById('qEnunciado').value.trim();
+
+    const options = [
+        document.getElementById('opt0').value.trim(),
+        document.getElementById('opt1').value.trim(),
+        document.getElementById('opt2').value.trim(),
+        document.getElementById('opt3').value.trim(),
+        document.getElementById('opt4').value.trim()
+    ].filter(opt => opt.length > 0);
+
+    if (options.length < 2) {
+        alert("A questão precisa de no mínimo 2 alternativas!");
+        return;
+    }
+
+    let correta = 0;
+    const radios = document.getElementsByName('optCorreta');
+    radios.forEach((r, idx) => {
+        if (r.checked) correta = idx;
+    });
+
+    if (correta >= options.length) {
+        correta = 0;
+    }
+
+    const questionDocId = editId ? editId : `q${ordem}_${Date.now().toString().slice(-4)}`;
+    const questionPayload = {
+        ordem: ordem,
+        enunciado: enunciado,
+        opcoes: options,
+        correta: correta
+    };
+
+    const saveBtn = document.getElementById('btnSaveQuestion');
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Salvando...";
+
+    try {
+        if (isConfigured && db) {
+            // Salvar no Firestore
+            await setDoc(doc(db, "provas", "simulado_1bim_3tec", "questoes", questionDocId), questionPayload);
+            console.log(`Questão ${questionDocId} gravada com sucesso no Firestore.`);
+        }
+
+        // Atualizar lista local na memória
+        const existingIdx = questionsList.findIndex(q => q.id === questionDocId);
+        const updatedItem = {
+            id: questionDocId,
+            ordem: ordem,
+            enunciado: enunciado,
+            question: enunciado,
+            opcoes: options,
+            options: options,
+            correta: correta,
+            correct: correta
+        };
+
+        if (existingIdx >= 0) {
+            questionsList[existingIdx] = updatedItem;
+        } else {
+            questionsList.push(updatedItem);
+        }
+
+        questionsList.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+
+        updateQuestionsBadges();
+        renderQuestionsPerformance();
+        renderQuestionsManager();
+
+        document.getElementById('questionModal').classList.add('hidden');
+        alert("Questão salva com sucesso no banco de dados!");
+    } catch (err) {
+        console.error("Erro ao salvar questão:", err);
+        alert(`Erro ao salvar questão: ${err.message}`);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Salvar no Firebase";
+    }
+}
+
+async function deleteQuestion(qId) {
+    if (!confirm(`Tem certeza que deseja excluir a questão ID "${qId}"?`)) {
+        return;
+    }
+
+    try {
+        if (isConfigured && db) {
+            await deleteDoc(doc(db, "provas", "simulado_1bim_3tec", "questoes", qId));
+        }
+
+        questionsList = questionsList.filter(q => q.id !== qId);
+        updateQuestionsBadges();
+        renderQuestionsPerformance();
+        renderQuestionsManager();
+        alert("Questão excluída com sucesso.");
+    } catch (err) {
+        console.error("Erro ao excluir questão:", err);
+        alert(`Erro ao excluir: ${err.message}`);
+    }
+}
+
+async function seedDefaultQuestions() {
+    if (!confirm("Isso irá importar as 10 questões padrão de 'questions.json' para o Firestore. Deseja continuar?")) {
+        return;
+    }
+
+    try {
+        const response = await fetch('questions.json');
+        const defaultData = await response.json();
+
+        if (isConfigured && db) {
+            await seedQuestionsToFirestore(defaultData);
+        }
+
+        await loadQuestionsFromFirestoreOrFallback();
+        alert("10 questões padrão sincronizadas com sucesso no Firestore!");
+    } catch (err) {
+        console.error("Erro ao restaurar questões padrão:", err);
+        alert(`Erro: ${err.message}`);
+    }
+}
+
+// ============================================================
+// 4. PAINEL DE CONTROLE E MÉTRICAS EM TEMPO REAL
 // ============================================================
 function initFirebaseStatus() {
     const badge = document.getElementById('firebaseStatusBadge');
@@ -267,17 +632,6 @@ function initFirebaseStatus() {
     } else {
         badge.className = "text-xs px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium";
         badge.textContent = "🟡 Modo Demonstração";
-    }
-}
-
-async function loadQuestionsMeta() {
-    try {
-        const response = await fetch('questions.json');
-        questionsList = await response.json();
-        document.getElementById('questionsCountBadge').textContent = `${questionsList.length} Questões`;
-        renderQuestionsPerformance();
-    } catch (err) {
-        console.error("Erro ao carregar questions.json:", err);
     }
 }
 
@@ -378,7 +732,7 @@ function renderQuestionsPerformance() {
     const totalSub = submissions.length;
 
     questionsList.forEach((q, idx) => {
-        const qNum = idx + 1;
+        const qNum = q.ordem || (idx + 1);
         let acertos = 0;
 
         if (totalSub > 0) {
@@ -387,7 +741,8 @@ function renderQuestionsPerformance() {
                     const ans = s.detailedAnswers.find(a => a.qNum === qNum);
                     if (ans && !ans.isWrong) acertos++;
                 } else if (s.answers && s.answers[`q${qNum}`] !== undefined) {
-                    if (q.correct !== undefined && s.answers[`q${qNum}`] === q.correct) {
+                    const expectedCorrect = q.correta !== undefined ? q.correta : q.correct;
+                    if (expectedCorrect !== undefined && s.answers[`q${qNum}`] === expectedCorrect) {
                         acertos++;
                     }
                 }
@@ -414,8 +769,8 @@ function renderQuestionsPerformance() {
         div.className = "space-y-1";
         div.innerHTML = `
             <div class="flex justify-between text-xs font-medium">
-                <span class="truncate max-w-[75%] text-slate-700" title="${q.question}">
-                    <strong>Q${qNum}.</strong> ${q.question}
+                <span class="truncate max-w-[75%] text-slate-700" title="${q.enunciado || q.question}">
+                    <strong>Q${qNum}.</strong> ${q.enunciado || q.question}
                 </span>
                 <span class="${textClass}">${rate}% acertos (${acertos}/${totalSub || 0}) ${statusBadge}</span>
             </div>
@@ -445,7 +800,7 @@ function renderStudentsTable(data) {
     data.forEach(s => {
         const violationsCount = s.violationsCount || (s.violations ? s.violations.length : 0);
         const hasViolations = violationsCount > 0;
-        const totalQ = s.totalQuestions || 10;
+        const totalQ = s.totalQuestions || questionsList.length || 10;
         const score = s.score !== undefined ? s.score : 0;
         const pct = Math.round((score / totalQ) * 100);
 
@@ -514,7 +869,7 @@ function showStudentDetails(submissionId) {
     if (!student) return;
 
     document.getElementById('modalStudentName').textContent = student.studentName;
-    document.getElementById('modalStudentInfo').textContent = `Turma: ${student.studentClass} | Pontuação: ${student.score}/${student.totalQuestions || 10} | Duração: ${student.tempoFormatado || '--'}`;
+    document.getElementById('modalStudentInfo').textContent = `Turma: ${student.studentClass} | Pontuação: ${student.score}/${student.totalQuestions || questionsList.length || 10} | Duração: ${student.tempoFormatado || '--'}`;
 
     const vList = document.getElementById('modalViolationsList');
     vList.innerHTML = '';
@@ -564,17 +919,18 @@ function exportCSV() {
         return;
     }
 
-    let csvContent = "\uFEFF"; // BOM para acentos no Excel
+    let csvContent = "\uFEFF";
     csvContent += "ID,Aluno,Turma,Nota,Questoes,Percentual,Tempo,Alertas_Violacao\n";
 
     submissions.forEach(s => {
         const vCount = s.violationsCount || (s.violations ? s.violations.length : 0);
+        const totalQ = s.totalQuestions || questionsList.length || 10;
         const line = [
             `"${s.id}"`,
             `"${s.studentName || ''}"`,
             `"${s.studentClass || ''}"`,
             s.score || 0,
-            s.totalQuestions || 10,
+            totalQ,
             `${s.percentage || 0}%`,
             `"${s.tempoFormatado || ''}"`,
             vCount
@@ -599,27 +955,4 @@ function setupDashboardEventListeners() {
     
     document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
     document.getElementById('modalCloseBtn2').addEventListener('click', closeModal);
-
-    // Botão para sincronizar/seed das questões no Firestore
-    document.getElementById('btnSeed').addEventListener('click', async () => {
-        if (!isConfigured || !db) {
-            alert("Atenção: Configure primeiro suas credenciais em 'firebase-config.js' para poder salvar os dados no seu Firestore.");
-            return;
-        }
-
-        try {
-            document.getElementById('btnSeed').disabled = true;
-            document.getElementById('btnSeed').textContent = "Sincronizando...";
-            const count = await seedQuestionsToFirestore(questionsList);
-            alert(`Sucesso! ${count} questões e gabarito foram criados e protegidos no Cloud Firestore.`);
-        } catch (err) {
-            alert(`Erro ao sincronizar: ${err.message}`);
-        } finally {
-            document.getElementById('btnSeed').disabled = false;
-            document.getElementById('btnSeed').innerHTML = `
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                Sincronizar Questões no Banco
-            `;
-        }
-    });
 }

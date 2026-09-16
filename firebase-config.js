@@ -10,6 +10,8 @@ import {
     addDoc, 
     getDoc, 
     getDocs, 
+    deleteDoc,
+    updateDoc,
     query, 
     orderBy, 
     onSnapshot, 
@@ -33,12 +35,12 @@ import {
 */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC5I_llll35twKYOltknUVTtyltlGdUOdQ",
-  authDomain: "avaliacao-tec.firebaseapp.com",
-  projectId: "avaliacao-tec",
-  storageBucket: "avaliacao-tec.firebasestorage.app",
-  messagingSenderId: "420069035199",
-  appId: "1:420069035199:web:2f6d4b8ac3989d979d8a0a"
+  apiKey: "SUA_API_KEY_AQUI",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  projectId: "SEU_PROJETO_ID",
+  storageBucket: "SEU_PROJETO.appspot.com",
+  messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+  appId: "SEU_APP_ID"
 };
 
 // Verifica se as credenciais foram preenchidas
@@ -72,6 +74,8 @@ export {
     addDoc, 
     getDoc, 
     getDocs, 
+    deleteDoc,
+    updateDoc,
     query, 
     orderBy, 
     onSnapshot, 

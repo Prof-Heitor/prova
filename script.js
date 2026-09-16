@@ -39,12 +39,12 @@ async function loadQuestions() {
         questionsData = [];
         snapshot.forEach(docSnap => {
           const data = docSnap.data();
+          const correctIdx = data.correta !== undefined ? data.correta : (data.correct !== undefined ? data.correct : 0);
           questionsData.push({
             id: docSnap.id,
-            question: data.enunciado,
-            options: data.opcoes,
-            // Nota: a resposta correta não é exposta aqui caso venha do Firestore
-            correct: data.correct !== undefined ? data.correct : -1
+            question: data.enunciado || data.question,
+            options: data.opcoes || data.options || [],
+            correct: correctIdx
           });
         });
         numQuestions = questionsData.length;
