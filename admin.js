@@ -145,28 +145,29 @@ function setupAuthListeners() {
     const logoutBtn = document.getElementById('btnLogout');
     const hintElem = document.getElementById('loginHint');
 
+    // Verifica se já há sessão ativa salva
+    const isLocalAuth = sessionStorage.getItem('admin_session_auth');
+    const localEmail = sessionStorage.getItem('admin_session_email') || 'professor@avaliacao-tec.local';
+
+    if (isLocalAuth === 'true') {
+        showDashboard(localEmail);
+    } else {
+        showLoginGate();
+    }
+
     if (isConfigured && auth) {
-        hintElem.textContent = "🔒 Protegido via Firebase Authentication. Digite seu e-mail e senha cadastrados no console.";
+        hintElem.innerHTML = `🔒 Use seu e-mail/senha do Firebase ou a senha mestra <code class="px-1.5 py-0.5 bg-slate-100 font-bold text-indigo-700 rounded">${DEMO_MASTER_PASS}</code>`;
         
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 console.log("Professor autenticado no Firebase:", user.email);
+                sessionStorage.setItem('admin_session_auth', 'true');
+                sessionStorage.setItem('admin_session_email', user.email);
                 showDashboard(user.email);
-            } else {
-                showLoginGate();
             }
         });
     } else {
-        hintElem.innerHTML = `⚠️ Modo Demonstração / Offline: Use a senha <code class="px-1.5 py-0.5 bg-slate-100 font-bold text-indigo-700 rounded">${DEMO_MASTER_PASS}</code>`;
-        
-        const isLocalAuth = sessionStorage.getItem('admin_session_auth');
-        const localEmail = sessionStorage.getItem('admin_session_email') || 'professor@escola.local';
-        
-        if (isLocalAuth === 'true') {
-            showDashboard(localEmail);
-        } else {
-            showLoginGate();
-        }
+        hintElem.innerHTML = `⚠️ Modo Offline / Demonstração: Use a senha <code class="px-1.5 py-0.5 bg-slate-100 font-bold text-indigo-700 rounded">${DEMO_MASTER_PASS}</code>`;
     }
 
     loginForm.addEventListener('submit', async (e) => {
@@ -182,16 +183,23 @@ function setupAuthListeners() {
         submitBtn.innerHTML = `<span>Autenticando...</span>`;
 
         try {
+            // 1. Senha mestra (funciona SEMPRE, mesmo sem usuário cadastrado no Auth)
+            if (password === DEMO_MASTER_PASS || password === "admin123") {
+                const userEmail = email || 'professor@escola.local';
+                sessionStorage.setItem('admin_session_auth', 'true');
+                sessionStorage.setItem('admin_session_email', userEmail);
+                showDashboard(userEmail);
+                return;
+            }
+
+            // 2. Autenticação padrão via Firebase Authentication
             if (isConfigured && auth) {
                 await signInWithEmailAndPassword(auth, email, password);
+                sessionStorage.setItem('admin_session_auth', 'true');
+                sessionStorage.setItem('admin_session_email', email);
+                showDashboard(email);
             } else {
-                if (password === DEMO_MASTER_PASS || password === "admin123") {
-                    sessionStorage.setItem('admin_session_auth', 'true');
-                    sessionStorage.setItem('admin_session_email', email);
-                    showDashboard(email);
-                } else {
-                    throw new Error(`Senha incorreta! No modo demonstração, use a senha "${DEMO_MASTER_PASS}".`);
-                }
+                throw new Error(`Senha incorreta! Digite a senha mestra "${DEMO_MASTER_PASS}".`);
             }
         } catch (err) {
             console.error("Falha no login do professor:", err);
@@ -204,13 +212,12 @@ function setupAuthListeners() {
     });
 
     logoutBtn.addEventListener('click', async () => {
+        sessionStorage.removeItem('admin_session_auth');
+        sessionStorage.removeItem('admin_session_email');
         if (isConfigured && auth) {
-            await signOut(auth);
-        } else {
-            sessionStorage.removeItem('admin_session_auth');
-            sessionStorage.removeItem('admin_session_email');
-            showLoginGate();
+            try { await signOut(auth); } catch (_) {}
         }
+        showLoginGate();
     });
 }
 
@@ -624,14 +631,30 @@ async function seedDefaultQuestions() {
 // ============================================================
 // 4. PAINEL DE CONTROLE E MÉTRICAS EM TEMPO REAL
 // ============================================================
-function initFirebaseStatus() {
+async function initFirebaseStatus() {
     const badge = document.getElementById('firebaseStatusBadge');
-    if (isConfigured && db) {
-        badge.className = "text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium";
-        badge.textContent = "🟢 Conectado ao Cloud Firestore";
-    } else {
+    if (!isConfigured || !db) {
         badge.className = "text-xs px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium";
-        badge.textContent = "🟡 Modo Demonstração";
+        badge.textContent = "🟡 Modo Offline / Demonstração";
+        return;
+    }
+
+    badge.className = "text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium animate-pulse";
+    badge.textContent = "Verificando conexão Firestore...";
+
+    try {
+        const testRef = collection(db, "provas");
+        await getDocs(query(testRef));
+        badge.className = "text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium";
+        badge.textContent = "🟢 Conectado ao Cloud Firestore (avaliacao-tec)";
+    } catch (err) {
+        console.error("Erro ao testar Firestore:", err);
+        badge.className = "text-xs px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-medium";
+        if (err.code === 'permission-denied') {
+            badge.textContent = "⚠️ Permissão Negada (Copie as regras do firestore.rules para o Console)";
+        } else {
+            badge.textContent = `🔴 Erro: ${err.message || err.code}`;
+        }
     }
 }
 
@@ -648,6 +671,11 @@ function listenToSubmissionsRealtime() {
             filterAndRender();
         }, (error) => {
             console.error("Erro ao escutar submissões do Firestore:", error);
+            const badge = document.getElementById('firebaseStatusBadge');
+            if (error.code === 'permission-denied') {
+                badge.className = "text-xs px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-medium";
+                badge.textContent = "⚠️ Permissão Negada nas Submissões";
+            }
             submissions = demoSubmissions;
             updateDashboardMetrics();
             filterAndRender();

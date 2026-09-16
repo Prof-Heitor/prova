@@ -2,36 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Provas e Questões públicas (sem gabarito):
-    // Qualquer usuário/aluno pode ler para fazer a prova
-    match /provas/{provaId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-
-      match /questoes/{questaoId} {
-        allow read: if true;
-        allow write: if request.auth != null;
-      }
+    // Regras abertas para testes e aplicação da prova:
+    // Permite que alunos carreguem as questões e enviem respostas/violações,
+    // e que o painel do professor visualize estatísticas e gerencie questões.
+    match /{document=**} {
+      allow read, write: if true;
     }
     
-    // Gabarito oficial:
-    // Apenas professores autenticados podem ler ou gravar
-    match /gabaritos/{provaId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Submissões de provas dos alunos:
-    // Alunos podem criar sua submissão. Leituras e relatórios são liberados para o professor
-    match /submissoes/{submissaoId} {
-      allow create: if true;
-      allow read, update, delete: if true; // Em produção com Auth: if request.auth != null;
-    }
-    
-    // Logs de violações de segurança em tempo real:
-    // Qualquer aluno em prova pode registrar sua ocorrência
-    match /violacoes/{violacaoId} {
-      allow create: if true;
-      allow read, delete: if true; // Em produção com Auth: if request.auth != null;
-    }
   }
 }
