@@ -24,23 +24,13 @@ import {
     onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-/*
-  INSTRUÇÕES PARA CONFIGURAR SEU PROJETO NO FIREBASE:
-  1. Acesse https://console.firebase.google.com/ e faça login com sua conta Google.
-  2. No menu lateral "Criação":
-     - Firestore Database: criar banco de dados.
-     - Authentication: ativar o provedor "E-mail/senha" na aba "Sign-in method" e cadastrar o e-mail/senha do professor na aba "Users".
-  3. Vá nas configurações do projeto (ícone de engrenagem) -> "Geral" -> "Seus aplicativos" (Web </>)
-  4. Cole o objeto 'firebaseConfig' abaixo:
-*/
-
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_AQUI",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO_ID",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-  appId: "SEU_APP_ID"
+  apiKey: "AIzaSyC5I_llll35twKYOltknUVTtyltlGdUOdQ",
+  authDomain: "avaliacao-tec.firebaseapp.com",
+  projectId: "avaliacao-tec",
+  storageBucket: "avaliacao-tec.firebasestorage.app",
+  messagingSenderId: "420069035199",
+  appId: "1:420069035199:web:2f6d4b8ac3989d979d8a0a"
 };
 
 // Verifica se as credenciais foram preenchidas
