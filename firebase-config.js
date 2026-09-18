@@ -33,12 +33,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC5I_llll35twKYOltknUVTtyltlGdUOdQ",
-  authDomain: "avaliacao-tec.firebaseapp.com",
-  projectId: "avaliacao-tec",
-  storageBucket: "avaliacao-tec.firebasestorage.app",
-  messagingSenderId: "420069035199",
-  appId: "1:420069035199:web:2f6d4b8ac3989d979d8a0a"
+  apiKey: "AIzaSyDc2vNTgI7kPIGQiLEDn-SybcF5BT6q8vM",
+  authDomain: "projeto-provas.firebaseapp.com",
+  projectId: "projeto-provas",
+  storageBucket: "projeto-provas.firebasestorage.app",
+  messagingSenderId: "283165220069",
+  appId: "1:283165220069:web:8ed1a4fcf81c3a0e04880c"
 };
 
 // Verifica se as credenciais foram preenchidas

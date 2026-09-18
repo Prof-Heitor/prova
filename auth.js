@@ -70,7 +70,7 @@ export async function requireRole(role, redirectUrl = 'login.html') {
         return null;
     }
     
-    return user;
+    return { user, profile };
 }
 
 export async function registerStudent(email, password, metadata) {

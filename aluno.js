@@ -30,9 +30,9 @@ let timeRemainingSeg = 0;
 async function init() {
     try {
         // Exige login e role de aluno
-        const userObj = await requireRole('aluno', '/login.html');
-        currentUser = userObj.user;
-        profileData = userObj;
+        const result = await requireRole('aluno', 'login.html');
+        currentUser = result.user;
+        profileData = result.profile;
         
         setupUI();
         await loadDashboard();

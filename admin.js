@@ -32,8 +32,9 @@ async function init() {
     }
 
     try {
-        currentTeacher = await requireRole('professor');
-        teacherEmail.textContent = currentTeacher.email || currentTeacher.nome;
+        const result = await requireRole('professor');
+        currentTeacher = result.user;
+        teacherEmail.textContent = result.profile.nome || result.user.email;
     } catch (e) {
         console.error("Auth erro:", e);
         return; // requireRole redirects to login
