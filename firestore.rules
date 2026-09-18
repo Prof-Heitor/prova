@@ -1,13 +1,54 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regras abertas para testes e aplicação da prova:
-    // Permite que alunos carreguem as questões e enviem respostas/violações,
-    // e que o painel do professor visualize estatísticas e gerencie questões.
-    match /{document=**} {
-      allow read, write: if true;
+    // Users — only teacher can create/edit, user can read own profile
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isTeacher());
+      allow create, update, delete: if isTeacher();
     }
-    
+    // Provas — everyone authenticated reads, only teacher writes
+    match /provas/{provaId} {
+      allow read: if request.auth != null;
+      allow write: if isTeacher();
+      match /questoes/{questaoId} {
+        allow read: if request.auth != null;
+        allow write: if isTeacher();
+      }
+    }
+    // Gabarito — only teacher
+    match /gabaritos/{docId} {
+      allow read, write: if isTeacher();
+    }
+    // Submissões — student creates own, teacher reads all
+    match /submissoes/{subId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null && (resource.data.uid == request.auth.uid || isTeacher());
+      allow update, delete: if isTeacher();
+    }
+    // Violações — student creates, teacher reads
+    match /violacoes/{vioId} {
+      allow create: if request.auth != null;
+      allow read: if isTeacher();
+    }
+    // Resultados liberados — everyone reads, teacher writes
+    match /resultados_liberados/{provaId} {
+      allow read: if request.auth != null;
+      allow write: if isTeacher();
+    }
+    // Alunos online — student writes own, teacher reads all
+    match /alunos_online/{odocId} {
+      allow write: if request.auth != null && request.auth.uid == odocId;
+      allow read: if isTeacher();
+    }
+    // Audit logs
+    match /audit_logs/{logId} {
+      allow create: if isTeacher();
+      allow read: if isTeacher();
+    }
+
+    function isTeacher() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'professor';
+    }
   }
 }

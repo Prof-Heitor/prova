@@ -2,55 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prova - 3º Ano Técnico</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="lib/jspdf.umd.min.js"></script>
+    <meta http-equiv="refresh" content="0;url=login.html">
+    <title>Redirecionando...</title>
+    <script>window.location.href = 'login.html';</script>
 </head>
-<body>
-    <div class="container">
-        <!-- Login Section -->
-        <div id="login-section" class="section active">
-            <h1>Login para Prova</h1>
-            <form id="login-form">
-                <label for="student-name">Nome do Aluno:</label>
-                <input type="text" id="student-name" required maxlength="50">
-                
-                <label for="class-select">Sala:</label>
-                <select id="class-select" required>
-                    <option value="">Selecione</option>
-                    <option value="3º Técnico">3º Técnico</option>
-                </select>
-                
-                <button type="submit">Iniciar Prova</button>
-            </form>
-        </div>
-
-        <!-- Test Section -->
-        <div id="test-section" class="section">
-            <h1>Prova - 3º Ano Técnico</h1>
-            <p id="student-info"></p>
-            <div id="fullscreen-prompt" class="alert" style="display: none;">Entrando em tela cheia automaticamente...</div>
-            
-            <form id="test-form" style="display: none;">
-                <div id="questions-container"></div>
-                <button type="submit">Finalizar Prova</button>
-            </form>
-        </div>
-
-        <!-- Results Section -->
-        <div id="results-section" class="section">
-            <h1>Resultado da Prova</h1>
-            <div id="score"></div>
-            <button id="download-pdf">Baixar PDF com Senha</button>
-            <p class="note">A senha será fornecida pelo professor ao final.</p>
-        </div>
-        <div style="margin-top: 2rem; text-align: center; border-top: 1px solid #eee; padding-top: 1rem;">
-            <a href="admin.html" style="color: #667eea; text-decoration: none; font-size: 0.85rem; font-weight: 600;">🔒 Painel do Professor / Resultados</a>
-        </div>
-    </div>
-
-    <script type="module" src="script.js"></script>
+<body style="background-color: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; margin: 0;">
+    <p>Redirecionando para o login...</p>
 </body>
 </html>
-

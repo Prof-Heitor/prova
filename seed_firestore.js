@@ -1,50 +1,55 @@
-// seed_firestore.js
-// Utilitário para popular o Firestore a partir de questions.json
+import { db, isConfigured, collection, doc, setDoc, writeBatch } from "./firebase-config.js";
+import { showToast } from "./toast.js";
 
-import { db, isConfigured, collection, doc, setDoc } from "./firebase-config.js";
+export async function seedQuestionsToFirestore(questionsData, provaId = 'simulado_1bim_3tec') {
+    if (!isConfigured) {
+        showToast("Firebase não configurado (modo offline).", "warning");
+        return;
+    }
 
-export async function seedQuestionsToFirestore(questionsData) {
-  if (!isConfigured || !db) {
-    throw new Error("Firebase ainda não configurado em firebase-config.js!");
-  }
+    try {
+        const batch = writeBatch(db);
+        
+        // Criar Prova
+        const provaRef = doc(db, "provas", provaId);
+        batch.set(provaRef, {
+            titulo: "Simulado Padrão",
+            disciplina: "Geral",
+            turma: "Geral",
+            tempoLimiteMin: 120,
+            ativa: true,
+            resultadosLiberados: false,
+            embaralhar: true,
+            criadoEm: new Date().toISOString(),
+            criadoPor: "sistema"
+        });
 
-  const provaId = "simulado_1bim_3tec";
+        const respostasCorretas = {};
+        
+        questionsData.forEach((q, index) => {
+            const qId = `q${index + 1}`;
+            const questaoRef = doc(db, "provas", provaId, "questoes", qId);
+            
+            batch.set(questaoRef, {
+                ordem: index + 1,
+                enunciado: q.enunciado,
+                opcoes: q.opcoes,
+                correta: q.correta
+            });
+            
+            respostasCorretas[qId] = q.correta;
+        });
 
-  // 1. Cadastrar metadados da prova
-  await setDoc(doc(db, "provas", provaId), {
-    titulo: "Prova - 3º Ano Técnico",
-    disciplina: "Desenvolvimento Web & Banco de Dados",
-    tempoLimiteMin: 60,
-    totalQuestoes: questionsData.length,
-    ativa: true,
-    atualizadoEm: new Date()
-  });
+        const gabaritoRef = doc(db, "gabaritos", provaId);
+        batch.set(gabaritoRef, {
+            respostasCorretas,
+            atualizadoEm: new Date().toISOString()
+        });
 
-  const gabaritoMap = {};
-
-  // 2. Inserir questões no Firestore
-  for (let i = 0; i < questionsData.length; i++) {
-    const q = questionsData[i];
-    const questaoId = `q${i + 1}`;
-    const correctIdx = q.correct !== undefined ? q.correct : (q.correta !== undefined ? q.correta : 0);
-    
-    gabaritoMap[questaoId] = correctIdx;
-
-    await setDoc(doc(db, "provas", provaId, "questoes", questaoId), {
-      ordem: i + 1,
-      enunciado: q.question,
-      opcoes: q.options,
-      correta: correctIdx
-    });
-  }
-
-  // 3. Grava também o mapa de gabarito para referência rápida
-  await setDoc(doc(db, "gabaritos", provaId), {
-    provaId: provaId,
-    respostasCorretas: gabaritoMap,
-    atualizadoEm: new Date()
-  });
-
-  console.log(`✅ ${questionsData.length} questões salvas no Firestore com sucesso!`);
-  return questionsData.length;
+        await batch.commit();
+        showToast("Dados iniciais carregados com sucesso!", "success");
+    } catch (e) {
+        console.error("Erro ao carregar dados:", e);
+        showToast("Erro ao carregar dados.", "error");
+    }
 }

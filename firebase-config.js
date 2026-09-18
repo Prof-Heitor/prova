@@ -15,13 +15,21 @@ import {
     query, 
     orderBy, 
     onSnapshot, 
-    serverTimestamp 
+    serverTimestamp,
+    where,
+    limit,
+    deleteField,
+    Timestamp,
+    writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { 
     getAuth, 
     signInWithEmailAndPassword, 
     signOut, 
-    onAuthStateChanged 
+    onAuthStateChanged,
+    createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
+    updateProfile 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -70,7 +78,15 @@ export {
     orderBy, 
     onSnapshot, 
     serverTimestamp,
+    where,
+    limit,
+    deleteField,
+    Timestamp,
     signInWithEmailAndPassword,
     signOut,
-    onAuthStateChanged
+    onAuthStateChanged,
+    createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
+    updateProfile,
+    writeBatch
 };

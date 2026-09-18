@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal do Aluno - Sistema de Provas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
+
+    <!-- Navbar Superior -->
+    <nav class="bg-indigo-600 text-white shadow-md fixed w-full z-40 top-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center cursor-pointer" id="navLogo">
+                    <span class="font-bold text-xl">EduExam</span>
+                    <span class="ml-2 px-2 py-1 bg-indigo-500 rounded text-xs font-semibold">Aluno</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="navUserName" class="hidden sm:block font-medium text-sm">Carregando...</span>
+                    <div class="relative">
+                        <button id="btnUserMenu" class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-white transition">
+                            <div id="navAvatar" class="h-8 w-8 rounded-full bg-white text-indigo-600 flex items-center justify-center font-bold text-sm">...</div>
+                        </button>
+                        <!-- Menu Suspenso -->
+                        <div id="userMenuDropdown" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-50">
+                            <a href="#" id="menuDashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Início</a>
+                            <a href="#" id="menuPerfil" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Meu Perfil</a>
+                            <hr>
+                            <a href="#" id="menuSair" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Sair</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="pt-20 pb-8 px-4 max-w-7xl mx-auto min-h-screen">
+        
+        <!-- SEÇÃO: Dashboard -->
+        <section id="secDashboard" class="block space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h1 id="welcomeMessage" class="text-2xl font-bold text-gray-800">Olá, Aluno!</h1>
+                <p class="text-gray-500 mt-1 text-sm">Bem-vindo(a) ao seu portal de avaliações.</p>
+            </div>
+
+            <!-- Métricas -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium uppercase">Provas Pendentes</p>
+                        <p id="metricPendentes" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium uppercase">Última Nota</p>
+                        <p id="metricUltima" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium uppercase">Média Geral</p>
+                        <p id="metricMedia" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Provas -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100">
+                <div class="p-5 border-b border-gray-100">
+                    <h2 class="text-lg font-bold text-gray-800">Provas e Atividades Disponíveis</h2>
+                </div>
+                <div class="p-5">
+                    <div id="provasGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <p class="text-gray-500 text-sm col-span-full">Carregando provas...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO: Prova em Andamento -->
+        <section id="secExam" class="hidden max-w-4xl mx-auto mt-2">
+            <div id="examWarningBanner" class="hidden bg-red-600 text-white px-4 py-2 rounded-lg mb-4 text-center font-bold shadow text-sm animate-pulse">
+                Atenção: Ação bloqueada ou foco perdido! Violação registrada.
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg border-t-4 border-indigo-600">
+                <div class="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center bg-gray-50 rounded-t-lg gap-3">
+                    <h2 id="examTitle" class="text-lg font-bold text-gray-800">Título da Prova</h2>
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-white px-3 py-1 rounded-full border shadow-sm flex items-center text-red-600 font-mono font-bold">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span id="examTimer">00:00</span>
+                        </div>
+                        <button id="btnFinishExamTop" class="px-4 py-1.5 bg-red-600 text-white text-sm font-semibold rounded hover:bg-red-700 transition">Finalizar</button>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center text-sm">
+                    <span id="examProgressText" class="font-semibold text-gray-600">Questão 1 de X</span>
+                    <div id="examProgressDots" class="flex space-x-1 overflow-x-auto max-w-[50%] sm:max-w-xs scrollbar-hide pb-1">
+                        <!-- Dots injetados -->
+                    </div>
+                </div>
+
+                <div class="p-6 md:p-8 min-h-[300px]">
+                    <h3 id="questionEnunciado" class="text-lg font-medium text-gray-800 mb-6 whitespace-pre-wrap">Carregando questão...</h3>
+                    <div id="questionOptions" class="space-y-3">
+                        <!-- Opções injetadas -->
+                    </div>
+                </div>
+
+                <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center rounded-b-lg">
+                    <button id="btnPrevQuestion" class="px-5 py-2 bg-gray-200 text-gray-700 text-sm rounded font-medium hover:bg-gray-300 disabled:opacity-50 transition">Anterior</button>
+                    <button id="btnNextQuestion" class="px-5 py-2 bg-indigo-600 text-white text-sm rounded font-medium hover:bg-indigo-700 transition">Próxima</button>
+                    <button id="btnFinishExamBottom" class="hidden px-5 py-2 bg-green-600 text-white text-sm rounded font-medium hover:bg-green-700 transition">Concluir Prova</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO: Resultados -->
+        <section id="secResults" class="hidden max-w-4xl mx-auto space-y-6">
+            <button id="btnBackToDashboard" class="text-indigo-600 hover:underline flex items-center mb-2 text-sm font-medium">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                Voltar ao Início
+            </button>
+            <div id="resultsContent" class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                <!-- Injetado via JS -->
+            </div>
+        </section>
+
+        <!-- SEÇÃO: Perfil -->
+        <section id="secPerfil" class="hidden max-w-3xl mx-auto space-y-6">
+            <h2 class="text-2xl font-bold text-gray-800">Meu Perfil</h2>
+            
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row items-center md:items-start gap-6">
+                <div id="profileAvatarBig" class="h-20 w-20 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-2xl shadow-inner shrink-0">
+                    ...
+                </div>
+                <div class="flex-1 w-full">
+                    <form id="formProfile" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nome de Exibição</label>
+                            <input type="text" id="profileName" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">E-mail</label>
+                                <input type="email" id="profileEmail" disabled class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm text-gray-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Matrícula</label>
+                                <input type="text" id="profileMatricula" disabled class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm text-gray-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700">Turma</label>
+                                <input type="text" id="profileTurma" disabled class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm text-gray-500">
+                            </div>
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded shadow hover:bg-indigo-700 transition">Salvar Alterações</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="text-md font-bold text-gray-800">Histórico de Provas</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-white">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Prova</th>
+                                <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                <th class="px-4 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Nota</th>
+                                <th class="px-4 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableHistory" class="bg-white divide-y divide-gray-200">
+                            <!-- Injetado -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modais -->
+    <div id="modalConfirmExam" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" aria-hidden="true" id="bgModalConfirm"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalConfirmTitle">Iniciar Prova</h3>
+                            <div class="mt-2 space-y-2 text-sm text-gray-600">
+                                <p><strong>Disciplina:</strong> <span id="modalConfirmSubject">...</span></p>
+                                <p><strong>Questões:</strong> <span id="modalConfirmQtd">...</span></p>
+                                <p><strong>Tempo Limite:</strong> <span id="modalConfirmTime">...</span> minutos</p>
+                                <div class="bg-yellow-50 p-3 rounded border border-yellow-200 mt-3 text-yellow-800 text-xs">
+                                    <p class="font-bold mb-1">Regras de Segurança:</p>
+                                    <ul class="list-disc pl-5 space-y-1">
+                                        <li>A prova será iniciada em tela cheia.</li>
+                                        <li>Não minimize nem saia da aba.</li>
+                                        <li>Botão direito e atalhos estão bloqueados.</li>
+                                        <li>Qualquer violação será reportada ao professor.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2 sm:gap-0">
+                    <button type="button" id="btnModalStart" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition">
+                        Iniciar Agora
+                    </button>
+                    <button type="button" id="btnModalCancel" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:w-auto sm:text-sm transition">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script da página -->
+    <script type="module" src="aluno.js"></script>
+</body>
+</html>
